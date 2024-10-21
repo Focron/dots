@@ -221,7 +221,7 @@ cd ~/.dots
 If you have any problems or want to contribute, please feel free to:
 
 - [**Open an Issue**](https://github.com/Focron/dots/issues/new)
-or
+ <br>**or**
 - [**Open a Pull-Request**](https://github.com/Focron/dots/pulls)
 
 
