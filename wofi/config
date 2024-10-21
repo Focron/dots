@@ -1,0 +1,4 @@
+style=~/.dots/wofi/style.css
+image_size=28
+key_expand=Right
+prompt=Search...

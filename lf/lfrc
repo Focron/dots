@@ -1,0 +1,289 @@
+
+# ENV Variables
+set shell bash
+set ignorecase true
+set icons true
+set drawbox true
+
+# These Scripts can be found under /usr/local/bin
+set previewer lf-preview 
+set cleaner lf-cleanup
+
+# Custom Commands
+cmd mkdir %{{
+    printf "Directory Name:"
+    read ans
+    mkdir $ans
+}}
+
+cmd mkfile %{{
+  printf "File Name: "
+  read ans
+  touch $ans
+}}
+
+cmd unzip %{{
+  case "$f" in
+      *.zip) unzip "$f" ;;
+      *.tar.gz) tar -xzvf "$f" ;;
+      *.tar.bz2) tar -xjvf "$f" ;;
+      *.tar) tar -xvf "$f" ;;
+      *.7z) 7za x "$f";;
+      *.rar) unrar x "$f";;
+      *) echo "Unsupported format" ;;
+  esac
+}}
+
+cmd zip %{{
+    printf "Filename (without .zip): "
+    read ans
+    name=$ans".zip"
+    if [[ -z "$fs" ]]; then
+        zip -vr $name $fx 
+    else
+        zip -vr $name $fs 
+    fi
+}}
+
+cmd 7zip %{{
+    printf "Filename (without .7z): "
+    read ans
+    name=$ans".7z"
+    if [[ -z "$fs" ]]; then
+        7za a $name $fx 
+    else
+        7za a $name $fs 
+    fi
+}}
+
+
+cmd tar ${{
+    printf "    What Compression Algorythim do you want?\n"
+    printf "    t - None (.tar)\n"
+    printf "    g - For less bigger files (.tar.gz)\n"
+    printf "    b - For many smaller files (.tar.bz2)\n"
+    printf "    Any - Exit\n"
+    read ft
+    case "$ft" in 
+        g) 
+            ft=".tar.gz" 
+            options="-czvf"
+            ;;
+        b) 
+            ft=".tar.bz2"
+            options="-cjvf"
+            ;;
+        t) 
+            ft=".tar" 
+            options="-cvf"
+            ;;
+        *) 
+            exit
+            ;;
+    esac
+    printf "Filename (without $ft): "
+    read ans
+    name=$ans$ft
+    if [[ -z "$fs" ]]; then
+        tar $options $name $fx 
+    else
+        tar $options $name $fs 
+    fi
+     
+}}
+
+
+cmd chmod %{{
+    printf "Enter options (q to exit): "
+    read opt
+    case "$opt" in 
+        q) 
+            exit;;
+        *) 
+            if [[ -z "$fs" ]]; then
+                chmod $opt $fx 
+                lf -remote "send $id reload"
+            else
+                chmod $opt $fs
+                lf -remote "send $id reload"
+            fi
+        ;;
+    esac
+}}
+
+cmd paste %{{cp-p --lf-paste $id}}
+
+cmd open ${{
+    case "$f" in
+        *.tar.bz|*.tar.bz2|*.tbz|*.tbz2|*.tar.gz|*.tgz|*.tar.xz|*.txz|*.zip|*.rar|*.iso)
+            mntdir="$f-archivemount"
+            if [ ! -d "$mntdir" ]; then
+                mkdir "$mntdir"
+                archivemount "$f" "$mntdir"
+                echo "$mntdir" >> "/tmp/__lf_archivemount_$id"
+            fi
+            mntdir="$(printf '%s' "$mntdir" | sed 's/\\/\\\\/g;s/"/\\"/g')"
+            lf -remote "send $id cd \"$mntdir\""
+            lf -remote "send $id reload"
+            ;;
+        *.mp4|*.mkv|*.webm|*.av1|*.avi)
+            printf "Play in terminal? (y|N)"
+            read opt
+            corr="y"
+            if [ "$opt" = "$corr" ]; then
+            clear
+            #timg --center "$f"
+            mpv --no-config --vo=tct "$f"
+
+            else
+		xdg-open "$fx"
+            fi
+            ;;
+
+        *.mp3|*.wav|*.flac|*.ogg)
+            printf "Play in terminal? (y|N)"
+            read opt
+            corr="y"
+            if [ "$opt" = "$corr" ]; then
+            clear
+            mpg123 "$f"
+
+            else
+		xdg-open "$fx"
+            fi
+            ;;
+	      
+	*.appimage|*.AppImage)
+	    "$fx"
+  	    ;;
+        *)
+		xdg-open "$fx"
+            ;;
+    esac
+}}
+
+lfcd () {
+    tmp="$(mktemp)"
+    fid="$(mktemp)"
+    lf -command '$printf $id > '"$fid"'' -last-dir-path="$tmp" "$@"
+    id="$(cat "$fid")"
+    archivemount_dir="/tmp/__lf_archivemount_$id"
+    if [ -f "$archivemount_dir" ]; then
+        cat "$archivemount_dir" | \
+            while read -r line; do
+                sudo umount "$line"
+                rmdir "$line"
+            done
+        rm -f "$archivemount_dir"
+    fi
+    if [ -f "$tmp" ]; then
+        dir="$(cat "$tmp")"
+        rm -f "$tmp"
+        if [ -d "$dir" ]; then
+            if [ "$dir" != "$(pwd)" ]; then
+                cd "$dir"
+            fi
+        fi
+    fi
+}
+
+
+# convert to mp3 files using lame
+cmd mp3 %{{
+    set -f
+    outname=$(echo "$f" | cut -f 1 -d '.')
+    lame -V --preset 320 "$f" "${outname}.mp3"
+}}
+
+cmd fzf_search ${{
+    RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+    res="$(
+        FZF_DEFAULT_COMMAND="$RG_PREFIX ''" \
+            fzf --bind "change:reload:$RG_PREFIX {q} || true" \
+            --ansi --layout=reverse --header 'Search in files' \
+            | cut -d':' -f1 | sed 's/\\/\\\\/g;s/"/\\"/g'
+    )"
+    [ -n "$res" ] && lf -remote "send $id select \"$res\""
+}}
+
+
+# Trash bindings
+cmd trash %{{
+  files=$(printf "$fx" | tr '\n' ';')
+  while [ "$files" ]; do
+    file=${files%%;*}
+
+    trash-put "$(basename "$file")"
+    if [ "$files" = "$file" ]; then
+      files=''
+    else
+      files="${files#*;}"
+    fi
+  done
+}}
+
+cmd restore_trash ${{trash-restore}}
+
+cmd clear_trash ${{trash-empty}}
+
+# Remove Defaults
+map d 
+map m
+map e 
+map n 
+
+
+# Binds
+map "v" $vscodium "$f"
+map "e" unzip
+
+map "mp3" mp3
+map sz fzf_search
+map "z<enter>" 7zip
+map "zz" zip
+map "z7" 7zip
+map "zt" tar
+map "w" $$SHELL
+map "mod" chmod
+map "nn" $$EDITOR "$f"
+map "nv" $nvim "$f"
+map "snv" $echo "sudo nvim" "$f"
+map "ns" $$sudo $EDITOR "$f"
+
+map "dd" trash
+map "DD#" clear_trash
+map . set hidden!
+map "dr" restore_trash
+map p paste
+map x cut
+map c copy
+map C clear
+map <enter> open
+map R reload
+map "md" mkdir
+map "mf" mkfile
+map "#" search
+
+
+# Movement Commands
+cmd Documents $lf -remote "send $id cd $(xdg-user-dir DOCUMENTS)"
+cmd Pictures $lf -remote "send $id cd $(xdg-user-dir PICTURES)"
+cmd Plex $lf -remote "send $id cd $(xdg-user-dir DOCUMENTS)/share/plex"
+cmd Me $lf -remote "send $id cd $(xdg-user-dir DOCUMENTS)/share/me"
+cmd Videos $lf -remote "send $id cd $(xdg-user-dir VIDEOS)"
+cmd Downloads $lf -remote "send $id cd $(xdg-user-dir DOWNLOAD)"
+
+
+
+# Movement
+map gD Documents
+map gd Downloads
+map gP Pictures
+map gc cd ~/.config
+map gp Plex
+map ge Me
+map gn cd ~/Nextcloud/Documents/HsH/
+map gh cd ~
+map gv Videos
+map gs cd ~/.local/bin
+map gt cd ~/.local/share/Trash/files

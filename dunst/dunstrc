@@ -1,0 +1,24 @@
+[global]
+frame_color = "#30c2ed"
+separator_color= frame
+follow = mouse
+corner_radius = 5
+background = "#1b1f1ceb"
+gap_size = 5
+
+
+[urgency_low]
+frame_color = "#D9E0EE"
+background = "#1b1f1ceb"
+foreground = "#D9E0EE"
+
+[urgency_normal]
+frame_color = "#30c2ed"
+background = "#1b1f1ceb"
+foreground = "#D9E0EE"
+
+[urgency_critical]
+background = "#1b1f1ceb"
+foreground = "#E7B56F"
+frame_color = "#AC4242"
+

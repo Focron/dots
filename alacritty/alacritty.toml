@@ -1,0 +1,15 @@
+[font.normal]
+family = "NotoSansM Nerd Font Mono"
+style = "Regular"
+
+[[keyboard.bindings]]
+action = "SpawnNewInstance"
+key = "Return"
+mods = "Control|Shift"
+
+[window]
+opacity = 0.95
+
+[window.dimensions]
+columns = 97
+lines = 24
