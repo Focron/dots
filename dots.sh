@@ -53,8 +53,6 @@ warn_user (){
   if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
    exit
-else
-  printf "\n"
 fi
 }
 
