@@ -64,14 +64,14 @@ if [[ $1 == "install" ]]; then
   
   # Create all nesecerry folders if they dont exist
   echo "Creating folders..."
-  for i in ${DIR_ARRAY[@]}; do 
+  for i in "${DIR_ARRAY[@]}"; do 
     mkdir -p $i 
   done
 
   # Symlink every config file into its appropriate folder
   echo "Symlinking dotfiles..."
   warn_user "This might override existing config files. Please Backup any pre-existing files!"
-  for i in ${LN_ARRAY[@]}; do 
+  for i in "${LN_ARRAY[@]}"; do 
     sudo ln -s $i 
   done
   echo "dotfiles installed!"
@@ -82,7 +82,7 @@ elif [[ $1 == "remove" ]]; then
   # Remove all Symlinkinked files
   echo "Removeing symlinks..."
   warn_user "This will remove ALL config files this script installed!"
-  for i in ${LN_ARRAY[@]}; do 
+  for i in "${LN_ARRAY[@]}"; do 
     sudo rm $(echo $i | cut -d ' ' -f2)
   done
 
@@ -97,7 +97,7 @@ elif [[ $1 == "update" ]]; then
  # Update every simlink and add any new ones
  echo "Updateing symlinks..."
  warn_user "This might override customisations to existing config files!"
- for i in ${LN_ARRAY[@]}; do 
+ for i in "${LN_ARRAY[@]}"; do 
    sudo ln -sf $i 
  done
  
