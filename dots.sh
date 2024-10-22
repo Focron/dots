@@ -90,7 +90,7 @@ elif [[ $1 == "remove" ]]; then
 
   # Remove the .dots folder
   echo "Removeing .dots folder..."
-  rm -r $USER_HOME/.dots/
+  rm -rf $USER_HOME/.dots/
 
   echo "dotfiles removed!"
 
