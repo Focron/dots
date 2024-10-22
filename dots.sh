@@ -49,10 +49,12 @@ fi
 # Warn the user that this Script will override existing files
 warn_user (){
   echo "WARNING: $1"
-  read -p "Do you want to Continue? [y/N]" -n 1 -r
+  read -p "Do you want to Continue? [y/N]" -r
   if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
    exit
+else
+  printf "\n"
 fi
 }
 
